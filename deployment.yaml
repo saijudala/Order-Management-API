@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-management-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-management-api
+  template:
+    metadata:
+      labels:
+        app: order-management-api
+    spec:
+      containers:
+      - name: order-management-api
+        image: abhij17/order-management-api:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
