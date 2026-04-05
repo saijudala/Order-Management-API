@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: order-management-api
-        image: abhij17/order-management-api:latest
+        image: abhij17/order-management-api:v1
         ports:
         - containerPort: 3000
         resources:
