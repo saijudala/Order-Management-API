@@ -13,12 +13,12 @@ A RESTful API built with Node.js, Express.js, and SQLite for managing e-commerce
 
 ### Run the deployment playbook:
 ```bash
-ansible-playbook -i "YOUR_SERVER_IP," -u ubuntu --private-key ~/.ssh/order-management-key.pem deploy.yml
+ansible-playbook -i "YOUR_SERVER_IP," -u ubuntu --private-key ~/.ssh/order-management-key.pem deploy.yaml
 ```
 
 ### Run the rollback playbook:
 ```bash
-ansible-playbook -i "YOUR_SERVER_IP," -u ubuntu --private-key ~/.ssh/order-management-key.pem rollback.yml
+ansible-playbook -i "YOUR_SERVER_IP," -u ubuntu --private-key ~/.ssh/order-management-key.pem rollback.yaml
 ```
 
 ## Accessing the Application
