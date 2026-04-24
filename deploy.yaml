@@ -1,0 +1,125 @@
+---
+- hosts: all
+  become: true
+  vars:
+    app_dir: /home/ubuntu/order-management-api
+    repo_url: https://github.com/saijudala/Order-Management-API.git
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Node.js repository setup dependencies
+      apt:
+        name:
+          - curl
+          - gnupg
+          - ca-certificates
+        state: present
+
+    - name: Add NodeSource repository for Node.js 20
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+        update_cache: yes
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Install build tools for native modules
+      apt:
+        name:
+          - python3
+          - make
+          - g++
+        state: present
+
+    - name: Install PostgreSQL and Python dependencies
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - python3-psycopg2
+          - acl
+        state: present
+
+    - name: Ensure PostgreSQL service is running
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Create database
+      postgresql_db:
+        name: orders_db
+        state: present
+      become_user: postgres
+
+    - name: Create database user
+      postgresql_user:
+        name: app_user
+        password: securepassword123
+        state: present
+      become_user: postgres
+
+    - name: Grant database user privileges
+      postgresql_privs:
+        db: orders_db
+        role: app_user
+        privs: ALL
+        type: database
+        state: present
+      become_user: postgres
+
+    - name: Clone application from GitHub
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes
+
+    - name: Install application dependencies
+      npm:
+        path: "{{ app_dir }}"
+        state: present
+
+    - name: Rebuild better-sqlite3 for Linux
+      command: npm rebuild better-sqlite3
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Install PM2 globally
+      npm:
+        name: pm2
+        global: yes
+        state: present
+
+    - name: Stop existing PM2 process if running
+      command: pm2 stop order-management-api
+      ignore_errors: yes
+
+    - name: Delete existing PM2 process if exists
+      command: pm2 delete order-management-api
+      ignore_errors: yes
+
+    - name: Start the Node.js app with PM2
+      command: pm2 start app.js --name "order-management-api"
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Save PM2 process list
+      command: pm2 save
+
+    - name: Verify app is running
+      command: curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/orders
+      register: health_check
+      failed_when: health_check.stdout != "200"

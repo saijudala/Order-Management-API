@@ -1,0 +1,58 @@
+---
+- hosts: all
+  become: true
+  vars:
+    app_dir: /home/ubuntu/order-management-api
+
+  tasks:
+    - name: Stop the Node.js app via PM2
+      command: pm2 stop order-management-api
+      ignore_errors: yes
+
+    - name: Delete PM2 process
+      command: pm2 delete order-management-api
+      ignore_errors: yes
+
+    - name: Remove the application directory
+      file:
+        path: "{{ app_dir }}"
+        state: absent
+
+    - name: Drop the application database
+      postgresql_db:
+        name: orders_db
+        state: absent
+      become_user: postgres
+      ignore_errors: yes
+
+    - name: Drop the database user
+      postgresql_user:
+        name: app_user
+        state: absent
+      become_user: postgres
+      ignore_errors: yes
+
+    - name: Stop PostgreSQL service
+      service:
+        name: postgresql
+        state: stopped
+        enabled: no
+
+    - name: Uninstall PostgreSQL
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+        state: absent
+        purge: yes
+
+    - name: Uninstall PM2 globally
+      npm:
+        name: pm2
+        global: yes
+        state: absent
+      ignore_errors: yes
+
+    - name: Confirm rollback complete
+      debug:
+        msg: "Rollback complete. Server returned to clean state."
